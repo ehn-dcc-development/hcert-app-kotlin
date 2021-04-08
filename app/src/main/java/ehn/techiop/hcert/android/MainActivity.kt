@@ -53,9 +53,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getChain() = CborProcessingChain(
-        TwoDimCodeService(350, BarcodeFormat.QR_CODE),
-        TwoDimCodeService(350, BarcodeFormat.AZTEC),
+    private fun getChain() = CborVerificationChain(
         CborService(VerificationCryptoService("https://dev.a-sit.at/certservice/cert")),
         ValSuiteService(),
         CompressorService(),
