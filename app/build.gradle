@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "ehn.techiop.hcert.android"
-        minSdkVersion 23
+        minSdkVersion 24
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
@@ -41,6 +41,10 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.navigation:navigation-fragment-ktx:2.2.2'
     implementation 'androidx.navigation:navigation-ui-ktx:2.2.2'
+    implementation 'com.journeyapps:zxing-android-embedded:4.0.2'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.0'
+    implementation 'com.nimbusds:nimbus-jose-jwt:9.7'
+    implementation 'org.bouncycastle:bcpkix-jdk15to18:1.66'
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
