@@ -2,14 +2,15 @@ package ehn.techiop.hcert.android
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
-import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.integration.android.IntentIntegrator
+import ehn.techiop.hcert.android.chain.*
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
@@ -18,25 +19,48 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
-        findViewById<FloatingActionButton>(R.id.fab).setOnClickListener { view ->
-            val intentIntegrator = IntentIntegrator(this)
-            intentIntegrator.setOrientationLocked(true)
-            intentIntegrator.setDesiredBarcodeFormats(BarcodeFormat.AZTEC.name, BarcodeFormat.QR_CODE.name)
-            val createScanIntent = intentIntegrator.createScanIntent()
-            startActivityForResult(createScanIntent, IntentIntegrator.REQUEST_CODE)
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show()
+        findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
+            val intent = IntentIntegrator(this).also {
+                it.setOrientationLocked(false)
+                it.setDesiredBarcodeFormats(
+                    BarcodeFormat.AZTEC.name,
+                    BarcodeFormat.QR_CODE.name
+                )
+            }.createScanIntent()
+            startActivityForResult(intent, IntentIntegrator.REQUEST_CODE)
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == IntentIntegrator.REQUEST_CODE) {
-            IntentIntegrator.parseActivityResult(requestCode, resultCode, data)?.let {
-                Log.i("MainActivity","Content: ${it.contents}")
+        IntentIntegrator.parseActivityResult(requestCode, resultCode, data)?.let { intentResult ->
+            intentResult.contents?.let {
+                thread {
+                    try {
+                        val vaccinationData = getChain().verify(it)
+                        runOnUiThread {
+                            findViewById<TextView>(R.id.textview_first).text =
+                                "Successfully validated this input: $vaccinationData"
+                        }
+                    } catch (e: Throwable) {
+                        runOnUiThread {
+                            findViewById<TextView>(R.id.textview_first).text =
+                                "Error on validation: ${e.message}"
+                        }
+                    }
+                }
             }
         }
     }
+
+    private fun getChain() = CborProcessingChain(
+        TwoDimCodeService(350, BarcodeFormat.QR_CODE),
+        TwoDimCodeService(350, BarcodeFormat.AZTEC),
+        CborService(VerificationCryptoService("https://dev.a-sit.at/certservice/cert")),
+        ValSuiteService(),
+        CompressorService(),
+        Base45Service()
+    )
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.

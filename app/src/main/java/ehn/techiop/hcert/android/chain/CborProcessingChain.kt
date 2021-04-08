@@ -21,6 +21,14 @@ class CborProcessingChain(
         return ResultCbor(cbor, cose, comCose, prefEncodedComCose, qrc, aztec)
     }
 
+    fun verify(input: String): VaccinationData {
+        val plainInput = valSuiteService.decode(input)
+        val compressedCose = base45Service.decode(plainInput)
+        val cose = compressorService.decode(compressedCose)
+        val cbor = cborService.verify(cose)
+        return cborService.decode(cbor)
+    }
+
 }
 
 data class ResultCbor(

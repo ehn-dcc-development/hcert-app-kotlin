@@ -24,7 +24,7 @@ class CborService(private val cryptoService: CryptoService) {
         val decoded = Sign1Message.DecodeFromBytes(input, MessageTag.Sign1) as Sign1Message
         val kid = decoded.protectedAttributes.get(HeaderKeys.KID.AsCBOR()).AsString()
         if (!decoded.validate(cryptoService.getCborVerificationKey(kid)))
-            throw IllegalArgumentException("Not validated")
+            throw IllegalArgumentException("COSE not validated")
         return decoded.GetContent()
     }
 
