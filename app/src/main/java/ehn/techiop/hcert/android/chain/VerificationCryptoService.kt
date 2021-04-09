@@ -8,7 +8,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.bouncycastle.crypto.params.ECPublicKeyParameters
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil
-import org.bouncycastle.math.ec.ECFieldElement
 import java.security.cert.Certificate
 import java.security.cert.CertificateFactory
 import java.security.interfaces.ECPublicKey
@@ -26,13 +25,10 @@ class VerificationCryptoService(private val baseUrl: String) : CryptoService {
         return OneKey(CBORObject.NewMap().also {
             it[KeyKeys.KeyType.AsCBOR()] = KeyKeys.KeyType_EC2
             it[KeyKeys.EC2_Curve.AsCBOR()] = KeyKeys.EC2_P256
-            it[KeyKeys.EC2_X.AsCBOR()] = encodeCoordinate((bcPublicKey).q.xCoord)
-            it[KeyKeys.EC2_Y.AsCBOR()] = encodeCoordinate((bcPublicKey).q.yCoord)
+            it[KeyKeys.EC2_X.AsCBOR()] = CBORObject.FromObject((bcPublicKey).q.xCoord.encoded)
+            it[KeyKeys.EC2_Y.AsCBOR()] = CBORObject.FromObject((bcPublicKey).q.yCoord.encoded)
         })
     }
-
-    private fun encodeCoordinate(coord: ECFieldElement) = CBORObject.FromObject(coord.encoded)
-
 
     override fun getCertificate(kid: String): Certificate {
         val request = Request.Builder().get().url("$baseUrl/$kid").build()
