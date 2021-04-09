@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.integration.android.IntentIntegrator
-import ehn.techiop.hcert.android.chain.*
+import ehn.techiop.hcert.kotlin.chain.*
 import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
