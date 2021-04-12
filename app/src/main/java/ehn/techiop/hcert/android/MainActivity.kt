@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     } catch (e: Throwable) {
                         runOnUiThread {
+                            findViewById<TextView>(R.id.textview_first).text = ""
                             findViewById<LinearLayout>(R.id.container_data).addView(TextView(this).also {
                                 it.text = "Error on validation: ${e.message}"
                                 it.setTextColor(resources.getColor(R.color.error, theme))
@@ -67,87 +68,90 @@ class MainActivity : AppCompatActivity() {
             it.text = "Successfully validated the scanned code."
             it.setTextColor(resources.getColor(R.color.success, theme))
         })
-        data.sub?.let { sub ->
-            fillSubject(container, sub)
-        }
-        data.rec?.let { rec ->
-            fillRecovery(container, rec)
-        }
-        data.tst?.let { tst ->
-            fillTest(container, tst)
-        }
-        data.vac?.let { vacList ->
-            vacList.forEach { entry ->
-                entry?.let { vac ->
-                    fillVac(container, vac)
-                }
-            }
-        }
+        data.sub?.let { sub -> fillSubject(container, sub) }
+        data.rec?.let { it.filterNotNull().forEach { rec -> fillRecovery(container, rec) }}
+        data.tst?.let { it.filterNotNull().forEach { tst -> fillTest(container, tst) } }
+        data.cert?.let { cert -> fillCertificate(container, cert) }
+        data.vac?.let { it.filterNotNull().forEach { vac -> fillVac(container, vac) } }
     }
 
-    private fun fillSubject(
-        container: LinearLayout,
-        sub: Person
-    ) {
-        container.addView(TextView(this).also { it.text = "Subject:" })
-        container.addView(TextView(this).also { it.text = "  Name: ${sub.n}" })
-        container.addView(TextView(this).also { it.text = "  DoB: ${sub.dob}" })
+    private fun fillSubject(container: LinearLayout, sub: Person) {
+        addTextView(container, "Subject", "")
+        addTextView(container, "  Name", sub.n)
+        addTextView(container, "  Given Name", sub.gn)
+        addTextView(container, "  Family Name", sub.fn)
+        addTextView(container, "  Date of Birth", sub.dob)
+        addTextView(container, "  Gender", sub.gen)
         sub.id?.let { idList ->
             idList.forEach { entry ->
                 entry?.let { id ->
-                    container.addView(TextView(this).also { it.text = "  Identifier:" })
-                    container.addView(TextView(this).also { it.text = "      ${id.t} = ${id.i}" })
+                    addTextView(container, "  Identifier", "")
+                    addTextView(container, "    Type", id.t)
+                    addTextView(container, "    id", id.i)
                 }
             }
         }
     }
 
-    private fun fillRecovery(
-        container: LinearLayout,
-        rec: PastInfection
-    ) {
-        container.addView(TextView(this).also { it.text = "Recovery statement:" })
-        container.addView(TextView(this).also { it.text = "  Disease: ${rec.dis}" })
-        container.addView(TextView(this).also { it.text = "  Date: ${rec.dat}" })
-        container.addView(TextView(this).also { it.text = "  Country: ${rec.cou}" })
+    private fun fillRecovery(container: LinearLayout, rec: PastInfection) {
+        addTextView(container, "Recovery statement", "")
+        addTextView(container, "  Disease", rec.dis)
+        addTextView(container, "  Date", rec.dat)
+        addTextView(container, "  Country", rec.cou)
     }
 
-    private fun fillTest(
-        container: LinearLayout,
-        tst: Test
-    ) {
-        container.addView(TextView(this).also { it.text = "Test:" })
-        container.addView(TextView(this).also { it.text = "  Disease: ${tst.dis}" })
-        container.addView(TextView(this).also { it.text = "  Type: ${tst.typ}" })
-        container.addView(TextView(this).also { it.text = "  Name: ${tst.tna}" })
-        container.addView(TextView(this).also { it.text = "  Manufacturer: ${tst.tma}" })
-        container.addView(TextView(this).also { it.text = "  Sample origin: ${tst.ori}" })
-        container.addView(TextView(this).also { it.text = "  Date: ${tst.dat}" })
-        container.addView(TextView(this).also { it.text = "  Result: ${tst.res}" })
-        container.addView(TextView(this).also { it.text = "  Facility: ${tst.fac}" })
-        container.addView(TextView(this).also { it.text = "  Country: ${tst.cou}" })
+    private fun fillTest(container: LinearLayout, tst: Test) {
+        addTextView(container, "Test", "")
+        addTextView(container, "  Disease", tst.dis)
+        addTextView(container, "  Type", tst.typ)
+        addTextView(container, "  Name", tst.tna)
+        addTextView(container, "  Manufacturer", tst.tma)
+        addTextView(container, "  Sample origin", tst.ori)
+        addTextView(container, "  Date", tst.dat)
+        addTextView(container, "  Date of sample", tst.dts)
+        addTextView(container, "  Date of result", tst.dtr)
+        addTextView(container, "  Result", tst.res)
+        addTextView(container, "  Facility", tst.fac)
+        addTextView(container, "  Country", tst.cou)
     }
 
-    private fun fillVac(
-        container: LinearLayout,
-        vac: Vaccination
-    ) {
-        container.addView(TextView(this).also { it.text = "Vaccination:" })
-        container.addView(TextView(this).also { it.text = "  Disease: ${vac.dis}" })
-        container.addView(TextView(this).also { it.text = "  Vaccine: ${vac.des}" })
-        container.addView(TextView(this).also { it.text = "  Product: ${vac.nam}" })
-        container.addView(TextView(this).also { it.text = "  Authorisation Holder: ${vac.aut}" })
-        container.addView(TextView(this).also { it.text = "  Dose sequence: ${vac.seq}" })
-        container.addView(TextView(this).also { it.text = "  Total number of doses: ${vac.tot}" })
-        container.addView(TextView(this).also { it.text = "  Batch: ${vac.lot}" })
-        container.addView(TextView(this).also { it.text = "  Date: ${vac.dat}" })
-        container.addView(TextView(this).also { it.text = "  Administering centre: ${vac.adm}" })
-        container.addView(TextView(this).also { it.text = "  Country: ${vac.cou}" })
+    private fun fillVac(container: LinearLayout, vac: Vaccination) {
+        addTextView(container, "Vaccination", "")
+        addTextView(container, "  Disease", vac.dis)
+        addTextView(container, "  Vaccine", vac.des)
+        addTextView(container, "  Product", vac.nam)
+        addTextView(container, "  VAP", vac.vap)
+        addTextView(container, "  MEP", vac.mep)
+        addTextView(container, "  Authorisation Holder", vac.aut)
+        addTextView(container, "  Dose sequence", vac.seq?.toString())
+        addTextView(container, "  Total number of doses", vac.tot?.toString())
+        addTextView(container, "  Batch", vac.lot)
+        addTextView(container, "  Date", vac.dat)
+        addTextView(container, "  Administering centre", vac.adm)
+        addTextView(container, "  Country", vac.cou)
+    }
+
+    private fun fillCertificate(container: LinearLayout, cert: DocumentMetadata) {
+        addTextView(container, "Certificate Metadata", "")
+        addTextView(container, "  Issuer", cert.`is`)
+        addTextView(container, "  Identifier", cert.id)
+        addTextView(container, "  Valid from", cert.vf)
+        addTextView(container, "  Valid until", cert.vu)
+        addTextView(container, "  Country", cert.co)
+        addTextView(container, "  Version", cert.vr)
+    }
+
+    private fun addTextView(container: LinearLayout, key: String, value: String?) {
+        value?.let { notnull ->
+            container.addView(TextView(this).also {
+                it.text = "$key: $notnull"
+            })
+        }
     }
 
     private fun getChain() = CborProcessingChain(
-        CborService(VerificationCryptoService("https://dev.a-sit.at/certservice/cert")),
-        ValSuiteService(),
+        LenientCborService(VerificationCryptoService("https://dev.a-sit.at/certservice/cert")),
+        LenientValSuiteService(),
         CompressorService(),
         Base45Service()
     )

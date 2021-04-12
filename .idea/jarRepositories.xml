@@ -26,5 +26,10 @@
       <option name="name" value="MavenLocal" />
       <option name="url" value="file:$USER_HOME$/.m2/repository/" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="GitHubPackages" />
+      <option name="name" value="GitHubPackages" />
+      <option name="url" value="https://maven.pkg.github.com/ehn-digital-green-development/hcert-kotlin" />
+    </remote-repository>
   </component>
 </project>
