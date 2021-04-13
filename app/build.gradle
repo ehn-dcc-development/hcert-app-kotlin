@@ -1,7 +1,6 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
-    id 'kotlinx-serialization'
 }
 
 android {
@@ -45,9 +44,7 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
         freeCompilerArgs += [
-                "-Xjsr305=strict",
-                "-Xopt-in=kotlin.ExperimentalUnsignedTypes",
-                "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi"
+                "-Xjsr305=strict"
         ]
     }
 }

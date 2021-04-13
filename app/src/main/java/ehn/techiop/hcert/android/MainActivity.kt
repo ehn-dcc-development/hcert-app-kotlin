@@ -39,37 +39,52 @@ class MainActivity : AppCompatActivity() {
                 findViewById<TextView>(R.id.textview_first).text = "Validating ..."
                 findViewById<LinearLayout>(R.id.container_data).removeAllViews()
                 thread {
-                    try {
-                        val vaccinationData = getChain().verify(it)
-                        runOnUiThread {
-                            findViewById<TextView>(R.id.textview_first).text = ""
-                            fillLayout(
-                                findViewById<LinearLayout>(R.id.container_data),
-                                vaccinationData
-                            )
-                        }
-                    } catch (e: Throwable) {
-                        runOnUiThread {
-                            findViewById<TextView>(R.id.textview_first).text = ""
-                            findViewById<LinearLayout>(R.id.container_data).addView(TextView(this).also {
-                                it.text = "Error on validation: ${e.message}"
-                                it.setTextColor(resources.getColor(R.color.error, theme))
-                            })
-                        }
-                    }
+                    verifyOnBackgroundThread(it)
                 }
             }
         }
     }
 
-    private fun fillLayout(container: LinearLayout, data: VaccinationData) {
+    private fun verifyOnBackgroundThread(qrCodeContent: String) {
+        val verificationResult = VerificationResult()
+        try {
+            val vaccinationData = getChain().verify(qrCodeContent, verificationResult)
+            runOnUiThread {
+                findViewById<TextView>(R.id.textview_first).text = ""
+                fillLayout(
+                    findViewById<LinearLayout>(R.id.container_data),
+                    vaccinationData,
+                    verificationResult
+                )
+            }
+        } catch (e: Throwable) {
+            runOnUiThread {
+                findViewById<TextView>(R.id.textview_first).text = ""
+                findViewById<LinearLayout>(R.id.container_data).addView(TextView(this).also {
+                    it.text = "Error on validation: ${e.message}"
+                    it.setTextColor(resources.getColor(R.color.error, theme))
+                })
+            }
+        }
+    }
+
+    private fun fillLayout(
+        container: LinearLayout,
+        data: VaccinationData,
+        verificationResult: VerificationResult
+    ) {
         container.removeAllViews()
         container.addView(TextView(this).also {
-            it.text = "Successfully validated the scanned code."
+            it.text = "Successfully decoded the contents of the scanned code."
             it.setTextColor(resources.getColor(R.color.success, theme))
         })
+        addTextView(container, "COSE verified", verificationResult.coseVerified.toString())
+        addTextView(container, "ZLIB decoded", verificationResult.zlibDecoded.toString())
+        addTextView(container, "CBOR decoded", verificationResult.cborDecoded.toString())
+        addTextView(container, "Base45 decoded", verificationResult.base45Decoded.toString())
+        addTextView(container, "ValSuite prefix", verificationResult.valSuitePrefix)
         data.sub?.let { sub -> fillSubject(container, sub) }
-        data.rec?.let { it.filterNotNull().forEach { rec -> fillRecovery(container, rec) }}
+        data.rec?.let { it.filterNotNull().forEach { rec -> fillRecovery(container, rec) } }
         data.tst?.let { it.filterNotNull().forEach { tst -> fillTest(container, tst) } }
         data.cert?.let { cert -> fillCertificate(container, cert) }
         data.vac?.let { it.filterNotNull().forEach { vac -> fillVac(container, vac) } }
@@ -150,7 +165,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getChain() = CborProcessingChain(
-        LenientCborService(VerificationCryptoService("https://dev.a-sit.at/certservice/cert")),
+        CborService(),
+        LenientCoseService(VerificationCryptoService("https://dev.a-sit.at/certservice/cert")),
         LenientValSuiteService(),
         CompressorService(),
         Base45Service()
