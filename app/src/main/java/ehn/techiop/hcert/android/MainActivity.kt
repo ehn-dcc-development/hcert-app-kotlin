@@ -74,15 +74,23 @@ class MainActivity : AppCompatActivity() {
         verificationResult: VerificationResult
     ) {
         container.removeAllViews()
-        container.addView(TextView(this).also {
-            it.text = "Successfully decoded the contents of the scanned code."
-            it.setTextColor(resources.getColor(R.color.success, theme))
-        })
-        addTextView(container, "COSE verified", verificationResult.coseVerified.toString())
-        addTextView(container, "ZLIB decoded", verificationResult.zlibDecoded.toString())
-        addTextView(container, "CBOR decoded", verificationResult.cborDecoded.toString())
-        addTextView(container, "Base45 decoded", verificationResult.base45Decoded.toString())
-        addTextView(container, "ValSuite prefix", verificationResult.valSuitePrefix)
+        if (verificationResult.valSuitePrefix != null && verificationResult.base45Decoded && verificationResult.zlibDecoded && verificationResult.coseVerified && verificationResult.cborDecoded) {
+            container.addView(TextView(this).also {
+                it.text = "Successfully decoded the contents of the scanned code."
+                it.setTextColor(resources.getColor(R.color.success, theme))
+            })
+        } else {
+            container.addView(TextView(this).also {
+                it.text = "Decoded the contents of the scanned code with warnings."
+                it.setTextColor(resources.getColor(R.color.warning, theme))
+            })
+        }
+        addTextView(container, "  ValSuite prefix", verificationResult.valSuitePrefix ?: "NONE")
+        addTextView(container, "  Base45 decoded", verificationResult.base45Decoded.toString())
+        addTextView(container, "  ZLIB decoded", verificationResult.zlibDecoded.toString())
+        addTextView(container, "  COSE verified", verificationResult.coseVerified.toString())
+        addTextView(container, "  CBOR decoded", verificationResult.cborDecoded.toString())
+        addTextView(container, "Data decoded", "")
         data.sub?.let { sub -> fillSubject(container, sub) }
         data.rec?.let { it.filterNotNull().forEach { rec -> fillRecovery(container, rec) } }
         data.tst?.let { it.filterNotNull().forEach { tst -> fillTest(container, tst) } }
@@ -164,13 +172,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getChain() = CborProcessingChain(
-        CborService(),
-        LenientCoseService(VerificationCryptoService("https://dev.a-sit.at/certservice/cert")),
-        LenientValSuiteService(),
-        CompressorService(),
-        Base45Service()
-    )
+    private fun getChain(): CborProcessingChain {
+        val repository = RemoteCachedCertificateRepository("https://dev.a-sit.at/certservice/cert")
+        val cryptoService = VerificationCryptoService(repository)
+        return CborProcessingChain(
+            DefaultCborService(),
+            DefaultCoseService(cryptoService),
+            DefaultValSuiteService(),
+            DefaultCompressorService(),
+            DefaultBase45Service()
+        )
+    }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
