@@ -11,6 +11,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.integration.android.IntentIntegrator
 import ehn.techiop.hcert.kotlin.chain.*
+import ehn.techiop.hcert.kotlin.chain.impl.*
 import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
@@ -91,77 +92,74 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  COSE verified", verificationResult.coseVerified.toString())
         addTextView(container, "  CBOR decoded", verificationResult.cborDecoded.toString())
         addTextView(container, "Data decoded", "")
-        data.sub?.let { sub -> fillSubject(container, sub) }
-        data.rec?.let { it.filterNotNull().forEach { rec -> fillRecovery(container, rec) } }
-        data.tst?.let { it.filterNotNull().forEach { tst -> fillTest(container, tst) } }
-        data.cert?.let { cert -> fillCertificate(container, cert) }
-        data.vac?.let { it.filterNotNull().forEach { vac -> fillVac(container, vac) } }
+        data.subject?.let { sub -> fillSubject(container, sub) }
+        data.recoveryStatements?.let { it.filterNotNull().forEach { rec -> fillRecovery(container, rec) } }
+        data.tests?.let { it.filterNotNull().forEach { tst -> fillTest(container, tst) } }
+        data.vaccinations?.let { it.filterNotNull().forEach { vac -> fillVac(container, vac) } }
+        data.metadata?.let { cert -> fillCertificate(container, cert) }
     }
 
     private fun fillSubject(container: LinearLayout, sub: Person) {
         addTextView(container, "Subject", "")
-        addTextView(container, "  Name", sub.n)
-        addTextView(container, "  Given Name", sub.gn)
-        addTextView(container, "  Family Name", sub.fn)
-        addTextView(container, "  Date of Birth", sub.dob)
-        addTextView(container, "  Gender", sub.gen)
-        sub.id?.let { idList ->
+        addTextView(container, "  Given Name", sub.givenName)
+        addTextView(container, "  Family Name", sub.familyName)
+        addTextView(container, "  Date of Birth", sub.dateOfBirth)
+        addTextView(container, "  Gender", sub.gender)
+        sub.identifiers?.let { idList ->
             idList.forEach { entry ->
                 entry?.let { id ->
                     addTextView(container, "  Identifier", "")
-                    addTextView(container, "    Type", id.t)
-                    addTextView(container, "    id", id.i)
+                    addTextView(container, "    Type", id.type)
+                    addTextView(container, "    id", id.id)
                 }
             }
         }
     }
 
-    private fun fillRecovery(container: LinearLayout, rec: PastInfection) {
+    private fun fillRecovery(container: LinearLayout, rec: RecoveryStatement) {
         addTextView(container, "Recovery statement", "")
-        addTextView(container, "  Disease", rec.dis)
-        addTextView(container, "  Date", rec.dat)
-        addTextView(container, "  Country", rec.cou)
+        addTextView(container, "  Disease", rec.disease)
+        addTextView(container, "  Date", rec.date)
+        addTextView(container, "  Country", rec.country)
     }
 
     private fun fillTest(container: LinearLayout, tst: Test) {
         addTextView(container, "Test", "")
-        addTextView(container, "  Disease", tst.dis)
-        addTextView(container, "  Type", tst.typ)
-        addTextView(container, "  Name", tst.tna)
-        addTextView(container, "  Manufacturer", tst.tma)
-        addTextView(container, "  Sample origin", tst.ori)
-        addTextView(container, "  Date", tst.dat)
-        addTextView(container, "  Date of sample", tst.dts)
-        addTextView(container, "  Date of result", tst.dtr)
-        addTextView(container, "  Result", tst.res)
-        addTextView(container, "  Facility", tst.fac)
-        addTextView(container, "  Country", tst.cou)
+        addTextView(container, "  Disease", tst.disease)
+        addTextView(container, "  Type", tst.type)
+        addTextView(container, "  Name", tst.name)
+        addTextView(container, "  Manufacturer", tst.manufacturer)
+        addTextView(container, "  Sample origin", tst.sampleOrigin)
+        addTextView(container, "  Date of sample", tst.dateTimeSample)
+        addTextView(container, "  Date of result", tst.dateTimeResult)
+        addTextView(container, "  Result", tst.result)
+        addTextView(container, "  Facility", tst.testFacility)
+        addTextView(container, "  Country", tst.country)
     }
 
     private fun fillVac(container: LinearLayout, vac: Vaccination) {
         addTextView(container, "Vaccination", "")
-        addTextView(container, "  Disease", vac.dis)
-        addTextView(container, "  Vaccine", vac.des)
-        addTextView(container, "  Product", vac.nam)
-        addTextView(container, "  VAP", vac.vap)
-        addTextView(container, "  MEP", vac.mep)
-        addTextView(container, "  Authorisation Holder", vac.aut)
-        addTextView(container, "  Dose sequence", vac.seq?.toString())
-        addTextView(container, "  Total number of doses", vac.tot?.toString())
-        addTextView(container, "  Batch", vac.lot)
-        addTextView(container, "  Date", vac.dat)
-        addTextView(container, "  Administering centre", vac.adm)
-        addTextView(container, "  Country", vac.cou)
+        addTextView(container, "  Disease", vac.disease)
+        addTextView(container, "  Vaccine", vac.vaccine)
+        addTextView(container, "  Product", vac.medicinalProduct)
+        addTextView(container, "  Authorisation Holder", vac.authorizationHolder)
+        addTextView(container, "  Dose sequence", vac.doseSequence?.toString())
+        addTextView(container, "  Total number of doses", vac.doseTotalNumber?.toString())
+        addTextView(container, "  Batch", vac.lotNumber)
+        addTextView(container, "  Date", vac.date)
+        addTextView(container, "  Administering centre", vac.administeringCentre)
+        addTextView(container, "  Country", vac.country)
     }
 
     private fun fillCertificate(container: LinearLayout, cert: DocumentMetadata) {
         addTextView(container, "Certificate Metadata", "")
-        addTextView(container, "  Issuer", cert.`is`)
-        addTextView(container, "  Identifier", cert.id)
-        addTextView(container, "  Valid from", cert.vf)
-        addTextView(container, "  Valid until", cert.vu)
-        addTextView(container, "  Country", cert.co)
-        addTextView(container, "  Version", cert.vr)
+        addTextView(container, "  Issuer", cert.issuer)
+        addTextView(container, "  Identifier", cert.identifier)
+        addTextView(container, "  Valid from", cert.validFrom)
+        addTextView(container, "  Valid until", cert.validUntil)
+        addTextView(container, "  Country", cert.country)
+        addTextView(container, "  Schema Version", cert.schemaVersion)
+        addTextView(container, "  Schema Type", cert.schemaType)
     }
 
     private fun addTextView(container: LinearLayout, key: String, value: String?) {
