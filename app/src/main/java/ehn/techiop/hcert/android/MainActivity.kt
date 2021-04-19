@@ -1,12 +1,9 @@
 package ehn.techiop.hcert.android
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.AttributeSet
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -58,7 +55,7 @@ class MainActivity : AppCompatActivity() {
                 findViewById<TextView>(R.id.textview_first).text = ""
                 fillLayout(
                     findViewById<LinearLayout>(R.id.container_data),
-                    vaccinationData,
+                    Data.fromSchema(vaccinationData),
                     verificationResult,
                     verificationDecision
                 )
@@ -76,7 +73,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun fillLayout(
         container: LinearLayout,
-        data: VaccinationData,
+        data: GreenCertificate,
         verificationResult: VerificationResult,
         verificationDecision: VerificationDecision
     ) {
@@ -105,27 +102,31 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Issued At", verificationResult.issuedAt?.toString())
         addTextView(container, "  Expiration", verificationResult.expirationTime?.toString())
         addTextView(container, "Data decoded", "")
+        addTextView(container, "  Version", data.schemaVersion)
+        addTextView(container, "  ID", data.identifier)
         data.subject?.let { sub -> fillSubject(container, sub) }
         data.recoveryStatements?.let {
             it.filterNotNull().forEach { rec -> fillRecovery(container, rec) }
         }
         data.tests?.let { it.filterNotNull().forEach { tst -> fillTest(container, tst) } }
         data.vaccinations?.let { it.filterNotNull().forEach { vac -> fillVac(container, vac) } }
-        data.metadata?.let { cert -> fillCertificate(container, cert) }
     }
 
     private fun fillSubject(container: LinearLayout, sub: Person) {
         addTextView(container, "Subject", "")
         addTextView(container, "  Given Name", sub.givenName)
+        addTextView(container, "  Given Name Transliterated", sub.givenNameTransliterated)
         addTextView(container, "  Family Name", sub.familyName)
-        addTextView(container, "  Date of Birth", sub.dateOfBirth)
+        addTextView(container, "  Family Name Transliterated", sub.familyNameTransliterated)
+        addTextView(container, "  Date of Birth", sub.dateOfBirth?.toString())
         addTextView(container, "  Gender", sub.gender)
         sub.identifiers?.let { idList ->
             idList.forEach { entry ->
                 entry?.let { id ->
                     addTextView(container, "  Identifier", "")
                     addTextView(container, "    Type", id.type)
-                    addTextView(container, "    id", id.id)
+                    addTextView(container, "    Id", id.id)
+                    addTextView(container, "    Country", id.country)
                 }
             }
         }
@@ -134,7 +135,7 @@ class MainActivity : AppCompatActivity() {
     private fun fillRecovery(container: LinearLayout, rec: RecoveryStatement) {
         addTextView(container, "Recovery statement", "")
         addTextView(container, "  Disease", rec.disease)
-        addTextView(container, "  Date", rec.date)
+        addTextView(container, "  Date", rec.date?.toString())
         addTextView(container, "  Country", rec.country)
     }
 
@@ -145,8 +146,8 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Name", tst.name)
         addTextView(container, "  Manufacturer", tst.manufacturer)
         addTextView(container, "  Sample origin", tst.sampleOrigin)
-        addTextView(container, "  Date of sample", tst.dateTimeSample)
-        addTextView(container, "  Date of result", tst.dateTimeResult)
+        addTextView(container, "  Date of sample", tst.dateTimeSample?.toString())
+        addTextView(container, "  Date of result", tst.dateTimeResult?.toString())
         addTextView(container, "  Result", tst.result)
         addTextView(container, "  Facility", tst.testFacility)
         addTextView(container, "  Country", tst.country)
@@ -161,20 +162,9 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Dose sequence", vac.doseSequence?.toString())
         addTextView(container, "  Total number of doses", vac.doseTotalNumber?.toString())
         addTextView(container, "  Batch", vac.lotNumber)
-        addTextView(container, "  Date", vac.date)
+        addTextView(container, "  Date", vac.date?.toString())
         addTextView(container, "  Administering centre", vac.administeringCentre)
         addTextView(container, "  Country", vac.country)
-    }
-
-    private fun fillCertificate(container: LinearLayout, cert: DocumentMetadata) {
-        addTextView(container, "Certificate Metadata", "")
-        addTextView(container, "  Issuer", cert.issuer)
-        addTextView(container, "  Identifier", cert.identifier)
-        addTextView(container, "  Valid from", cert.validFrom)
-        addTextView(container, "  Valid until", cert.validUntil)
-        addTextView(container, "  Country", cert.country)
-        addTextView(container, "  Schema Version", cert.schemaVersion)
-        addTextView(container, "  Schema Type", cert.schemaType)
     }
 
     private fun addTextView(container: LinearLayout, key: String, value: String?) {
