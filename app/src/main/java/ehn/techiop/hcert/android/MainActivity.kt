@@ -1,9 +1,12 @@
 package ehn.techiop.hcert.android
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.AttributeSet
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -50,12 +53,14 @@ class MainActivity : AppCompatActivity() {
         val verificationResult = VerificationResult()
         try {
             val vaccinationData = getChain().verify(qrCodeContent, verificationResult)
+            val verificationDecision = DecisionService().decide(verificationResult)
             runOnUiThread {
                 findViewById<TextView>(R.id.textview_first).text = ""
                 fillLayout(
                     findViewById<LinearLayout>(R.id.container_data),
                     vaccinationData,
-                    verificationResult
+                    verificationResult,
+                    verificationDecision
                 )
             }
         } catch (e: Throwable) {
@@ -72,28 +77,38 @@ class MainActivity : AppCompatActivity() {
     private fun fillLayout(
         container: LinearLayout,
         data: VaccinationData,
-        verificationResult: VerificationResult
+        verificationResult: VerificationResult,
+        verificationDecision: VerificationDecision
     ) {
         container.removeAllViews()
-        if (verificationResult.valSuitePrefix != null && verificationResult.base45Decoded && verificationResult.zlibDecoded && verificationResult.coseVerified && verificationResult.cborDecoded) {
-            container.addView(TextView(this).also {
+
+        when (verificationDecision) {
+            VerificationDecision.GOOD -> container.addView(TextView(this).also {
                 it.text = "Successfully decoded the contents of the scanned code."
                 it.setTextColor(resources.getColor(R.color.success, theme))
             })
-        } else {
-            container.addView(TextView(this).also {
+            VerificationDecision.WARNING -> container.addView(TextView(this).also {
                 it.text = "Decoded the contents of the scanned code with warnings."
                 it.setTextColor(resources.getColor(R.color.warning, theme))
             })
+            else -> container.addView(TextView(this).also {
+                it.text = "Decoded the contents of the scanned code with errors."
+                it.setTextColor(resources.getColor(R.color.error, theme))
+            })
         }
-        addTextView(container, "  ValSuite prefix", verificationResult.valSuitePrefix ?: "NONE")
+        addTextView(container, "  Context", verificationResult.contextIdentifier ?: "NONE")
         addTextView(container, "  Base45 decoded", verificationResult.base45Decoded.toString())
         addTextView(container, "  ZLIB decoded", verificationResult.zlibDecoded.toString())
         addTextView(container, "  COSE verified", verificationResult.coseVerified.toString())
         addTextView(container, "  CBOR decoded", verificationResult.cborDecoded.toString())
+        addTextView(container, "  Issuer", verificationResult.issuer)
+        addTextView(container, "  Issued At", verificationResult.issuedAt?.toString())
+        addTextView(container, "  Expiration", verificationResult.expirationTime?.toString())
         addTextView(container, "Data decoded", "")
         data.subject?.let { sub -> fillSubject(container, sub) }
-        data.recoveryStatements?.let { it.filterNotNull().forEach { rec -> fillRecovery(container, rec) } }
+        data.recoveryStatements?.let {
+            it.filterNotNull().forEach { rec -> fillRecovery(container, rec) }
+        }
         data.tests?.let { it.filterNotNull().forEach { tst -> fillTest(container, tst) } }
         data.vaccinations?.let { it.filterNotNull().forEach { vac -> fillVac(container, vac) } }
         data.metadata?.let { cert -> fillCertificate(container, cert) }
@@ -176,7 +191,7 @@ class MainActivity : AppCompatActivity() {
         return CborProcessingChain(
             DefaultCborService(),
             DefaultCoseService(cryptoService),
-            DefaultValSuiteService(),
+            DefaultContextIdentifierService(),
             DefaultCompressorService(),
             DefaultBase45Service()
         )
