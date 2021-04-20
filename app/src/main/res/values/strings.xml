@@ -7,6 +7,6 @@
     <string name="next">Next</string>
     <string name="previous">Previous</string>
 
-    <string name="hello_first_fragment">Press the green button in the right-hand lower corner to scan a QR Code from https://dev.a-sit.at/certservice or from https://demo.uvci.eu</string>
+    <string name="hello_first_fragment">Press the green button in the right-hand lower corner to scan a QR Code from https://dgc.a-sit.at/ehn</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
 </resources>

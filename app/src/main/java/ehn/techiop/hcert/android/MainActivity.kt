@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "Data decoded", "")
         addTextView(container, "  Version", data.schemaVersion)
         addTextView(container, "  ID", data.identifier)
-        data.subject?.let { sub -> fillSubject(container, sub) }
+        fillSubject(container, data.subject)
         data.recoveryStatements?.let {
             it.filterNotNull().forEach { rec -> fillRecovery(container, rec) }
         }
@@ -118,13 +118,13 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Given Name Transliterated", sub.givenNameTransliterated)
         addTextView(container, "  Family Name", sub.familyName)
         addTextView(container, "  Family Name Transliterated", sub.familyNameTransliterated)
-        addTextView(container, "  Date of Birth", sub.dateOfBirth?.toString())
-        addTextView(container, "  Gender", sub.gender)
+        addTextView(container, "  Date of Birth", sub.dateOfBirth.toString())
+        addTextView(container, "  Gender", sub.gender?.value)
         sub.identifiers?.let { idList ->
             idList.forEach { entry ->
                 entry?.let { id ->
                     addTextView(container, "  Identifier", "")
-                    addTextView(container, "    Type", id.type)
+                    addTextView(container, "    Type", id.type.value)
                     addTextView(container, "    Id", id.id)
                     addTextView(container, "    Country", id.country)
                 }
@@ -135,7 +135,7 @@ class MainActivity : AppCompatActivity() {
     private fun fillRecovery(container: LinearLayout, rec: RecoveryStatement) {
         addTextView(container, "Recovery statement", "")
         addTextView(container, "  Disease", rec.disease)
-        addTextView(container, "  Date", rec.date?.toString())
+        addTextView(container, "  Date", rec.date.toString())
         addTextView(container, "  Country", rec.country)
     }
 
@@ -143,12 +143,11 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "Test", "")
         addTextView(container, "  Disease", tst.disease)
         addTextView(container, "  Type", tst.type)
-        addTextView(container, "  Name", tst.name)
         addTextView(container, "  Manufacturer", tst.manufacturer)
         addTextView(container, "  Sample origin", tst.sampleOrigin)
-        addTextView(container, "  Date of sample", tst.dateTimeSample?.toString())
-        addTextView(container, "  Date of result", tst.dateTimeResult?.toString())
-        addTextView(container, "  Result", tst.result)
+        addTextView(container, "  Date of sample", tst.dateTimeSample.toString())
+        addTextView(container, "  Date of result", tst.dateTimeResult.toString())
+        addTextView(container, "  Result", tst.resultPositive.toString())
         addTextView(container, "  Facility", tst.testFacility)
         addTextView(container, "  Country", tst.country)
     }
@@ -159,10 +158,10 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Vaccine", vac.vaccine)
         addTextView(container, "  Product", vac.medicinalProduct)
         addTextView(container, "  Authorisation Holder", vac.authorizationHolder)
-        addTextView(container, "  Dose sequence", vac.doseSequence?.toString())
-        addTextView(container, "  Total number of doses", vac.doseTotalNumber?.toString())
+        addTextView(container, "  Dose sequence", vac.doseSequence.toString())
+        addTextView(container, "  Total number of doses", vac.doseTotalNumber.toString())
         addTextView(container, "  Batch", vac.lotNumber)
-        addTextView(container, "  Date", vac.date?.toString())
+        addTextView(container, "  Date", vac.date.toString())
         addTextView(container, "  Administering centre", vac.administeringCentre)
         addTextView(container, "  Country", vac.country)
     }
@@ -176,7 +175,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getChain(): CborProcessingChain {
-        val repository = RemoteCachedCertificateRepository("https://dev.a-sit.at/certservice/cert")
+        val repository = RemoteCachedCertificateRepository("https://dgc.a-sit.at/ehn/cert")
         val cryptoService = VerificationCryptoService(repository)
         return CborProcessingChain(
             DefaultCborService(),
