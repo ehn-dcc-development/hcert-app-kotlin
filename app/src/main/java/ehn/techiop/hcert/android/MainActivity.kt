@@ -47,20 +47,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun verifyOnBackgroundThread(qrCodeContent: String) {
-        val verificationResult = VerificationResult()
         try {
+            val verificationResult = VerificationResult()
             val vaccinationData = getChain().verify(qrCodeContent, verificationResult)
             val verificationDecision = DecisionService().decide(verificationResult)
+            val data = Data.fromSchema(vaccinationData)
             runOnUiThread {
                 findViewById<TextView>(R.id.textview_first).text = ""
                 fillLayout(
                     findViewById<LinearLayout>(R.id.container_data),
-                    Data.fromSchema(vaccinationData),
+                    data,
                     verificationResult,
                     verificationDecision
                 )
             }
         } catch (e: Throwable) {
+            e.printStackTrace()
             runOnUiThread {
                 findViewById<TextView>(R.id.textview_first).text = ""
                 findViewById<LinearLayout>(R.id.container_data).addView(TextView(this).also {
@@ -73,7 +75,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun fillLayout(
         container: LinearLayout,
-        data: GreenCertificate,
+        data: GreenCertificate?,
         verificationResult: VerificationResult,
         verificationDecision: VerificationDecision
     ) {
@@ -101,6 +103,10 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Issuer", verificationResult.issuer)
         addTextView(container, "  Issued At", verificationResult.issuedAt?.toString())
         addTextView(container, "  Expiration", verificationResult.expirationTime?.toString())
+        if (data == null) {
+            addTextView(container, "No data decoded", "")
+            return
+        }
         addTextView(container, "Data decoded", "")
         addTextView(container, "  Version", data.schemaVersion)
         addTextView(container, "  ID", data.identifier)
