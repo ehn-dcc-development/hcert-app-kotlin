@@ -125,7 +125,6 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Family Name", sub.familyName)
         addTextView(container, "  Family Name Transliterated", sub.familyNameTransliterated)
         addTextView(container, "  Date of Birth", sub.dateOfBirth.toString())
-        addTextView(container, "  Gender", sub.gender?.value)
         sub.identifiers?.let { idList ->
             idList.forEach { entry ->
                 entry?.let { id ->
