@@ -11,7 +11,13 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.integration.android.IntentIntegrator
 import ehn.techiop.hcert.kotlin.chain.*
-import ehn.techiop.hcert.kotlin.chain.impl.*
+import ehn.techiop.hcert.kotlin.chain.impl.PrefilledCertificateRepository
+import ehn.techiop.hcert.kotlin.chain.impl.TrustListCertificateRepository
+import ehn.techiop.hcert.kotlin.chain.impl.VerificationCryptoService
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.File
+import java.io.FileOutputStream
 import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
@@ -21,6 +27,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
+        findViewById<FloatingActionButton>(R.id.fabTrustList).setOnClickListener {
+            thread {
+                downloadTrustList()
+            }
+        }
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             val intent = IntentIntegrator(this).also {
                 it.setOrientationLocked(false)
@@ -30,6 +41,23 @@ class MainActivity : AppCompatActivity() {
                 )
             }.createScanIntent()
             startActivityForResult(intent, IntentIntegrator.REQUEST_CODE)
+        }
+    }
+
+    private fun downloadTrustList() {
+        try {
+            val content = loadTrustListCached(true)
+            val trustList =
+                TrustListService(VerificationCryptoService(loadTrustListAnchor())).decode(content)
+            runOnUiThread {
+                findViewById<TextView>(R.id.textview_first).text =
+                    "Loaded trust list, contains ${trustList.certificates.size} entries\nValid from ${trustList.validFrom} until ${trustList.validUntil}"
+            }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            runOnUiThread {
+                findViewById<TextView>(R.id.textview_first).text = "Error on download: ${e.message}"
+            }
         }
     }
 
@@ -179,16 +207,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getChain(): CborProcessingChain {
-        val repository = RemoteCachedCertificateRepository("https://dgc.a-sit.at/ehn/cert")
-        val cryptoService = VerificationCryptoService(repository)
-        return CborProcessingChain(
-            DefaultCborService(),
-            DefaultCoseService(cryptoService),
-            DefaultContextIdentifierService(),
-            DefaultCompressorService(),
-            DefaultBase45Service()
-        )
+    private fun getChain(): Chain {
+        val trustAnchor = loadTrustListAnchor()
+        val trustListEncoded = loadTrustListCached()
+        val repository = TrustListCertificateRepository(trustListEncoded, trustAnchor)
+        return Chain.buildVerificationChain(repository)
+    }
+
+    private fun loadTrustListCached(forceDownload: Boolean = false): ByteArray {
+        val file = File(applicationContext.filesDir, "trust_list.bin")
+        if (file.exists() && !forceDownload) {
+            return file.readBytes()
+        }
+        val content = loadTrustListFromWeb()
+        FileOutputStream(file, false).use {
+            it.write(content)
+        }
+        return content
+    }
+
+    private fun loadTrustListAnchor(): PrefilledCertificateRepository {
+        val trustAnchorResource = resources.openRawResource(R.raw.trust_list_anchor)
+        val trustAnchorCertPem = trustAnchorResource.readBytes().decodeToString()
+        return PrefilledCertificateRepository(trustAnchorCertPem)
+    }
+
+    private fun loadTrustListFromWeb(): ByteArray {
+        val url = "https://dgc.a-sit.at/ehn/cert/list"
+        val request = Request.Builder().get().url(url).build()
+        val response = OkHttpClient.Builder().build().newCall(request).execute()
+        response.body?.let {
+            return it.bytes()
+        }
+        throw IllegalArgumentException("Could not load trust list from $url")
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
