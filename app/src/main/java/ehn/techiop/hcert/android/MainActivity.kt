@@ -1,5 +1,6 @@
 package ehn.techiop.hcert.android
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
@@ -10,17 +11,21 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.integration.android.IntentIntegrator
-import ehn.techiop.hcert.kotlin.chain.*
+import ehn.techiop.hcert.kotlin.chain.Chain
+import ehn.techiop.hcert.kotlin.chain.DecisionService
+import ehn.techiop.hcert.kotlin.chain.VerificationDecision
+import ehn.techiop.hcert.kotlin.chain.VerificationResult
 import ehn.techiop.hcert.kotlin.chain.impl.PrefilledCertificateRepository
 import ehn.techiop.hcert.kotlin.chain.impl.TrustListCertificateRepository
-import ehn.techiop.hcert.kotlin.chain.impl.VerificationCoseService
 import ehn.techiop.hcert.kotlin.data.*
+import ehn.techiop.hcert.kotlin.trust.TrustListDecodeService
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.concurrent.thread
 
+@SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,16 +53,21 @@ class MainActivity : AppCompatActivity() {
     private fun downloadTrustList() {
         try {
             val content = loadTrustListCached(true)
-            val trustList = TrustListDecodeService(VerificationCoseService(loadTrustListAnchor()))
-                .decode(content)
+            val trustList = TrustListDecodeService(loadTrustListAnchor()).decode(content)
             runOnUiThread {
-                findViewById<TextView>(R.id.textview_first).text =
-                    "Loaded trust list, contains ${trustList.certificates.size} entries\nValid from ${trustList.validFrom} until ${trustList.validUntil}"
+                addTextView(
+                    findViewById(R.id.container_data),
+                    "Loaded trust list, contains ${trustList.certificates.size} entries\n" +
+                            "Valid from ${trustList.validFrom} until ${trustList.validUntil}"
+                )
             }
         } catch (e: Throwable) {
             e.printStackTrace()
             runOnUiThread {
-                findViewById<TextView>(R.id.textview_first).text = "Error on download: ${e.message}"
+                addTextView(
+                    findViewById(R.id.container_data),
+                    "Error on download: ${e.message}"
+                )
             }
         }
     }
@@ -66,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         IntentIntegrator.parseActivityResult(requestCode, resultCode, data)?.let { intentResult ->
             intentResult.contents?.let {
-                findViewById<TextView>(R.id.textview_first).text = "Validating ..."
+                addTextView(findViewById(R.id.container_data), "Validating ...")
                 findViewById<LinearLayout>(R.id.container_data).removeAllViews()
                 thread {
                     verifyOnBackgroundThread(it)
@@ -82,9 +92,8 @@ class MainActivity : AppCompatActivity() {
             val verificationDecision = DecisionService().decide(verificationResult)
             val data = GreenCertificate.fromEuSchema(vaccinationData)
             runOnUiThread {
-                findViewById<TextView>(R.id.textview_first).text = ""
                 fillLayout(
-                    findViewById<LinearLayout>(R.id.container_data),
+                    findViewById(R.id.container_data),
                     data,
                     verificationResult,
                     verificationDecision
@@ -93,7 +102,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Throwable) {
             e.printStackTrace()
             runOnUiThread {
-                findViewById<TextView>(R.id.textview_first).text = ""
                 findViewById<LinearLayout>(R.id.container_data).addView(TextView(this).also {
                     it.text = "Error on validation: ${e.message}"
                     it.setTextColor(resources.getColor(R.color.error, theme))
@@ -105,7 +113,7 @@ class MainActivity : AppCompatActivity() {
     private fun fillLayout(
         container: LinearLayout,
         data: GreenCertificate?,
-        verificationResult: VerificationResult,
+        it: VerificationResult,
         verificationDecision: VerificationDecision
     ) {
         container.removeAllViews()
@@ -124,35 +132,23 @@ class MainActivity : AppCompatActivity() {
                 it.setTextColor(resources.getColor(R.color.error, theme))
             })
         }
-        addTextView(container, "  Context", verificationResult.contextIdentifier ?: "NONE")
-        addTextView(container, "  Base45 decoded", verificationResult.base45Decoded.toString())
-        addTextView(container, "  ZLIB decoded", verificationResult.zlibDecoded.toString())
-        addTextView(container, "  COSE verified", verificationResult.coseVerified.toString())
-        addTextView(container, "  CBOR decoded", verificationResult.cborDecoded.toString())
-        addTextView(container, "  Issuer", verificationResult.issuer)
-        addTextView(container, "  Issued At", verificationResult.issuedAt?.toString())
-        addTextView(container, "  Expiration", verificationResult.expirationTime?.toString())
-        addTextView(
-            container,
-            "  Cert. valid from",
-            verificationResult.certificateValidFrom?.toString()
-        )
-        addTextView(
-            container,
-            "  Cert. valid until",
-            verificationResult.certificateValidUntil?.toString()
-        )
-        addTextView(
-            container,
-            "  Cert. valid content",
-            verificationResult.certificateValidContent.toString()
-        )
-        addTextView(container, "  Content", verificationResult.content.toString())
+        addTextView(container, "  Context", it.contextIdentifier ?: "NONE")
+        addTextView(container, "  Base45 decoded", it.base45Decoded.toString())
+        addTextView(container, "  ZLIB decoded", it.zlibDecoded.toString())
+        addTextView(container, "  COSE verified", it.coseVerified.toString())
+        addTextView(container, "  CBOR decoded", it.cborDecoded.toString())
+        addTextView(container, "  Issuer", it.issuer)
+        addTextView(container, "  Issued At", it.issuedAt?.toString())
+        addTextView(container, "  Expiration", it.expirationTime?.toString())
+        addTextView(container, "  Cert. valid from", it.certificateValidFrom?.toString())
+        addTextView(container, "  Cert. valid until", it.certificateValidUntil?.toString())
+        addTextView(container, "  Cert. valid content", it.certificateValidContent.toString())
+        addTextView(container, "  Content", it.content.toString())
         if (data == null) {
-            addTextView(container, "No data decoded", "")
+            addTextView(container, "No data decoded")
             return
         }
-        addTextView(container, "Data decoded", "")
+        addTextView(container, "Data decoded:")
         addTextView(container, "  Version", data.schemaVersion)
         addTextView(container, "  DateOfBirth", data.dateOfBirth.toString())
         fillSubject(container, data.subject)
@@ -164,7 +160,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fillSubject(container: LinearLayout, it: Person) {
-        addTextView(container, "Person", "")
+        addTextView(container, "Person:")
         addTextView(container, "  Given Name", it.givenName)
         addTextView(container, "  Given Name Transliterated", it.givenNameTransliterated)
         addTextView(container, "  Family Name", it.familyName)
@@ -172,7 +168,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fillRecovery(container: LinearLayout, it: RecoveryStatement) {
-        addTextView(container, "Recovery statement", "")
+        addTextView(container, "Recovery statement:")
         addTextView(container, "  Target", it.target.value)
         addTextView(
             container,
@@ -187,7 +183,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fillTest(container: LinearLayout, it: Test) {
-        addTextView(container, "Test", "")
+        addTextView(container, "Test:")
         addTextView(container, "  Target", it.target.value)
         addTextView(container, "  Type", it.type)
         addTextView(container, "  Name (NAA)", it.nameNaa)
@@ -202,7 +198,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fillVac(container: LinearLayout, it: Vaccination) {
-        addTextView(container, "Vaccination", "")
+        addTextView(container, "Vaccination:")
         addTextView(container, "  Target", it.target.value)
         addTextView(container, "  Vaccine", it.vaccine.value)
         addTextView(container, "  Product", it.medicinalProduct.value)
@@ -213,6 +209,12 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Country", it.country)
         addTextView(container, "  Cert. Issuer", it.certificateIssuer)
         addTextView(container, "  Cert. Id", it.certificateIdentifier)
+    }
+
+    private fun addTextView(container: LinearLayout, key: String) {
+        container.addView(TextView(this).also {
+            it.text = key
+        })
     }
 
     private fun addTextView(container: LinearLayout, key: String, value: String?) {
