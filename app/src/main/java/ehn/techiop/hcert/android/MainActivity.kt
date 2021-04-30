@@ -169,7 +169,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun fillRecovery(container: LinearLayout, it: RecoveryStatement) {
         addTextView(container, "Recovery statement:")
-        addTextView(container, "  Target", it.target.value)
+        addTextView(container, "  Target", it.target.valueSetEntry.display)
         addTextView(
             container,
             "  Date first pos. result",
@@ -184,10 +184,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun fillTest(container: LinearLayout, it: Test) {
         addTextView(container, "Test:")
-        addTextView(container, "  Target", it.target.value)
+        addTextView(container, "  Target", it.target.valueSetEntry.display)
         addTextView(container, "  Type", it.type)
         addTextView(container, "  Name (NAA)", it.nameNaa)
-        addTextView(container, "  Name (RAT)", it.nameRat)
+        addTextView(container, "  Name (RAT)", it.nameRat?.valueSetEntry?.display)
         addTextView(container, "  Date of sample", it.dateTimeSample.toString())
         addTextView(container, "  Date of result", it.dateTimeResult.toString())
         addTextView(container, "  Result", it.resultPositive.toString())
@@ -199,10 +199,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun fillVac(container: LinearLayout, it: Vaccination) {
         addTextView(container, "Vaccination:")
-        addTextView(container, "  Target", it.target.value)
-        addTextView(container, "  Vaccine", it.vaccine.value)
-        addTextView(container, "  Product", it.medicinalProduct.value)
-        addTextView(container, "  Authorisation Holder", it.authorizationHolder.value)
+        addTextView(container, "  Target", it.target.valueSetEntry.display)
+        addTextView(container, "  Vaccine", it.vaccine.valueSetEntry.display)
+        addTextView(container, "  Product", it.medicinalProduct.valueSetEntry.display)
+        addTextView(container, "  Authorisation Holder", it.authorizationHolder.valueSetEntry.display)
         addTextView(container, "  Dose Number", it.doseNumber.toString())
         addTextView(container, "  Total number of doses", it.doseTotalNumber.toString())
         addTextView(container, "  Date", it.date.toString())
