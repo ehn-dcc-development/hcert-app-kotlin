@@ -18,7 +18,7 @@ import ehn.techiop.hcert.kotlin.chain.VerificationResult
 import ehn.techiop.hcert.kotlin.chain.impl.PrefilledCertificateRepository
 import ehn.techiop.hcert.kotlin.chain.impl.TrustListCertificateRepository
 import ehn.techiop.hcert.kotlin.data.*
-import ehn.techiop.hcert.kotlin.trust.TrustListDecodeService
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -27,6 +27,16 @@ import kotlin.concurrent.thread
 
 @SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
+
+    private val client by lazy {
+        OkHttpClient.Builder()
+            .cache(Cache(directory = applicationContext.cacheDir, maxSize = 10L * 1024L * 1024L))
+            .build()
+    }
+
+    private val trustListFile by lazy { File(applicationContext.filesDir, "trust_list.bin") }
+
+    private val trustSigFile by lazy { File(applicationContext.filesDir, "trust_sig.bin") }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,10 +51,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             val intent = IntentIntegrator(this).also {
                 it.setOrientationLocked(false)
-                it.setDesiredBarcodeFormats(
-                    BarcodeFormat.AZTEC.name,
-                    BarcodeFormat.QR_CODE.name
-                )
+                it.setDesiredBarcodeFormats(BarcodeFormat.QR_CODE.name)
             }.createScanIntent()
             startActivityForResult(intent, IntentIntegrator.REQUEST_CODE)
         }
@@ -52,23 +59,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun downloadTrustList() {
         try {
-            val content = loadTrustListCached(true)
-            val trustList = TrustListDecodeService(loadTrustListAnchor()).decode(content)
-            runOnUiThread {
-                addTextView(
-                    findViewById(R.id.container_data),
-                    "Loaded trust list, contains ${trustList.certificates.size} entries\n" +
-                            "Valid from ${trustList.validFrom} until ${trustList.validUntil}"
-                )
-            }
+            downloadTrustListFiles()
         } catch (e: Throwable) {
             e.printStackTrace()
-            runOnUiThread {
-                addTextView(
-                    findViewById(R.id.container_data),
-                    "Error on download: ${e.message}"
-                )
-            }
+            showLog("Error on download: ${e.message}")
         }
     }
 
@@ -76,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         IntentIntegrator.parseActivityResult(requestCode, resultCode, data)?.let { intentResult ->
             intentResult.contents?.let {
-                addTextView(findViewById(R.id.container_data), "Validating ...")
+                showLog("Validating ...")
                 findViewById<LinearLayout>(R.id.container_data).removeAllViews()
                 thread {
                     verifyOnBackgroundThread(it)
@@ -87,17 +81,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun verifyOnBackgroundThread(qrCodeContent: String) {
         try {
-            val verificationResult = VerificationResult()
-            val vaccinationData = getChain().decode(qrCodeContent, verificationResult)
-            val verificationDecision = DecisionService().decide(verificationResult)
+            val result = VerificationResult()
+            val vaccinationData = getChain().decode(qrCodeContent, result)
+            val decision = DecisionService().decide(result)
             val data = GreenCertificate.fromEuSchema(vaccinationData)
             runOnUiThread {
-                fillLayout(
-                    findViewById(R.id.container_data),
-                    data,
-                    verificationResult,
-                    verificationDecision
-                )
+                fillLayout(findViewById(R.id.container_data), data, result, decision)
             }
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -189,8 +178,8 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Name (NAA)", it.nameNaa)
         addTextView(container, "  Name (RAT)", it.nameRat?.valueSetEntry?.display)
         addTextView(container, "  Date of sample", it.dateTimeSample.toString())
-        addTextView(container, "  Date of result", it.dateTimeResult.toString())
-        addTextView(container, "  Result", it.resultPositive.toString())
+        addTextView(container, "  Date of result", it.dateTimeResult?.toString())
+        addTextView(container, "  Result", it.resultPositive.valueSetEntry.display)
         addTextView(container, "  Facility", it.testFacility)
         addTextView(container, "  Country", it.country)
         addTextView(container, "  Cert. Issuer", it.certificateIssuer)
@@ -202,13 +191,23 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Target", it.target.valueSetEntry.display)
         addTextView(container, "  Vaccine", it.vaccine.valueSetEntry.display)
         addTextView(container, "  Product", it.medicinalProduct.valueSetEntry.display)
-        addTextView(container, "  Authorisation Holder", it.authorizationHolder.valueSetEntry.display)
+        addTextView(
+            container,
+            "  Authorisation Holder",
+            it.authorizationHolder.valueSetEntry.display
+        )
         addTextView(container, "  Dose Number", it.doseNumber.toString())
         addTextView(container, "  Total number of doses", it.doseTotalNumber.toString())
         addTextView(container, "  Date", it.date.toString())
         addTextView(container, "  Country", it.country)
         addTextView(container, "  Cert. Issuer", it.certificateIssuer)
         addTextView(container, "  Cert. Id", it.certificateIdentifier)
+    }
+
+    private fun showLog(content: String) {
+        runOnUiThread {
+            addTextView(findViewById(R.id.container_data), content)
+        }
     }
 
     private fun addTextView(container: LinearLayout, key: String) {
@@ -227,21 +226,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun getChain(): Chain {
         val trustAnchor = loadTrustListAnchor()
-        val trustListEncoded = loadTrustListCached()
-        val repository = TrustListCertificateRepository(trustListEncoded, trustAnchor)
+        val trustListContent = try {
+            loadWebTrustList()
+        } catch (e: Throwable) {
+            trustListFile.readBytes()
+        }
+        val trustListSignature = try {
+            loadWebTrustSig()
+        } catch (e: Throwable) {
+            trustSigFile.readBytes()
+        }
+        val repository =
+            TrustListCertificateRepository(trustListSignature, trustListContent, trustAnchor)
         return Chain.buildVerificationChain(repository)
     }
 
-    private fun loadTrustListCached(forceDownload: Boolean = false): ByteArray {
-        val file = File(applicationContext.filesDir, "trust_list.bin")
-        if (file.exists() && !forceDownload) {
-            return file.readBytes()
-        }
-        val content = loadTrustListFromWeb()
-        FileOutputStream(file, false).use {
-            it.write(content)
-        }
-        return content
+    private fun downloadTrustListFiles() {
+        FileOutputStream(trustListFile, false).use { it.write(loadWebTrustList()) }
+        FileOutputStream(trustSigFile, false).use { it.write(loadWebTrustSig()) }
+        showLog("Downloaded trust list files")
     }
 
     private fun loadTrustListAnchor(): PrefilledCertificateRepository {
@@ -250,14 +253,16 @@ class MainActivity : AppCompatActivity() {
         return PrefilledCertificateRepository(trustAnchorCertPem)
     }
 
-    private fun loadTrustListFromWeb(): ByteArray {
-        val url = "https://dgc.a-sit.at/ehn/cert/list"
-        val request = Request.Builder().get().url(url).build()
-        val response = OkHttpClient.Builder().build().newCall(request).execute()
-        response.body?.let {
-            return it.bytes()
+    private fun loadWebTrustSig() = loadFromWeb("https://dgc.a-sit.at/ehn/cert/sigv2")
+
+    private fun loadWebTrustList() = loadFromWeb("https://dgc.a-sit.at/ehn/cert/listv2")
+
+    private fun loadFromWeb(url: String): ByteArray {
+        client.newCall(Request.Builder().get().url(url).build()).execute().use {
+            if (!it.isSuccessful || it.body == null)
+                throw IllegalArgumentException("Could not load from $url: $it")
+            return it.body!!.bytes()
         }
-        throw IllegalArgumentException("Could not load trust list from $url")
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
