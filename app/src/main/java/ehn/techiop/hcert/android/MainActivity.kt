@@ -45,7 +45,12 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<FloatingActionButton>(R.id.fabTrustList).setOnClickListener {
             thread {
-                downloadTrustList()
+                try {
+                    downloadTrustListFiles()
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    showLog("Error on download: ${e.message}")
+                }
             }
         }
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
@@ -54,15 +59,6 @@ class MainActivity : AppCompatActivity() {
                 it.setDesiredBarcodeFormats(BarcodeFormat.QR_CODE.name)
             }.createScanIntent()
             startActivityForResult(intent, IntentIntegrator.REQUEST_CODE)
-        }
-    }
-
-    private fun downloadTrustList() {
-        try {
-            downloadTrustListFiles()
-        } catch (e: Throwable) {
-            e.printStackTrace()
-            showLog("Error on download: ${e.message}")
         }
     }
 
@@ -125,6 +121,7 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Base45 decoded", it.base45Decoded.toString())
         addTextView(container, "  ZLIB decoded", it.zlibDecoded.toString())
         addTextView(container, "  COSE verified", it.coseVerified.toString())
+        addTextView(container, "  CWT decoded", it.cwtDecoded.toString())
         addTextView(container, "  CBOR decoded", it.cborDecoded.toString())
         addTextView(container, "  Issuer", it.issuer)
         addTextView(container, "  Issued At", it.issuedAt?.toString())
@@ -174,11 +171,10 @@ class MainActivity : AppCompatActivity() {
     private fun fillTest(container: LinearLayout, it: Test) {
         addTextView(container, "Test:")
         addTextView(container, "  Target", it.target.valueSetEntry.display)
-        addTextView(container, "  Type", it.type)
+        addTextView(container, "  Type", it.type.valueSetEntry.display)
         addTextView(container, "  Name (NAA)", it.nameNaa)
         addTextView(container, "  Name (RAT)", it.nameRat?.valueSetEntry?.display)
         addTextView(container, "  Date of sample", it.dateTimeSample.toString())
-        addTextView(container, "  Date of result", it.dateTimeResult?.toString())
         addTextView(container, "  Result", it.resultPositive.valueSetEntry.display)
         addTextView(container, "  Facility", it.testFacility)
         addTextView(container, "  Country", it.country)
