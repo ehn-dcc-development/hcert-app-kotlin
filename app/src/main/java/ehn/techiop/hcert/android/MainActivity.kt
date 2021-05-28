@@ -155,7 +155,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun fillRecovery(container: LinearLayout, it: RecoveryStatement) {
         addTextView(container, "Recovery statement:")
-        addTextView(container, "  Target", it.target.valueSetEntry.display)
+        addTextView(container, "  Target", blankSafe(it.target))
         addTextView(
             container,
             "  Date first pos. result",
@@ -170,12 +170,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun fillTest(container: LinearLayout, it: Test) {
         addTextView(container, "Test:")
-        addTextView(container, "  Target", it.target.valueSetEntry.display)
-        addTextView(container, "  Type", it.type.valueSetEntry.display)
+        addTextView(container, "  Target", blankSafe(it.target))
+        addTextView(container, "  Type", blankSafe(it.type))
         addTextView(container, "  Name (NAA)", it.nameNaa)
-        addTextView(container, "  Name (RAT)", it.nameRat?.valueSetEntry?.display)
+        addTextView(container, "  Name (RAT)", it.nameRat?.let { blankSafe(it) })
         addTextView(container, "  Date of sample", it.dateTimeSample.toString())
-        addTextView(container, "  Result", it.resultPositive.valueSetEntry.display)
+        addTextView(container, "  Result", blankSafe(it.resultPositive))
         addTextView(container, "  Facility", it.testFacility)
         addTextView(container, "  Country", it.country)
         addTextView(container, "  Cert. Issuer", it.certificateIssuer)
@@ -184,20 +184,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun fillVac(container: LinearLayout, it: Vaccination) {
         addTextView(container, "Vaccination:")
-        addTextView(container, "  Target", it.target.valueSetEntry.display)
-        addTextView(container, "  Vaccine", it.vaccine.valueSetEntry.display)
-        addTextView(container, "  Product", it.medicinalProduct.valueSetEntry.display)
-        addTextView(
-            container,
-            "  Authorisation Holder",
-            it.authorizationHolder.valueSetEntry.display
-        )
+        addTextView(container, "  Target", blankSafe(it.target))
+        addTextView(container, "  Vaccine", blankSafe(it.vaccine))
+        addTextView(container, "  Product", blankSafe(it.medicinalProduct))
+        addTextView(container, "  Authorisation Holder", blankSafe(it.authorizationHolder))
         addTextView(container, "  Dose Number", it.doseNumber.toString())
         addTextView(container, "  Total number of doses", it.doseTotalNumber.toString())
         addTextView(container, "  Date", it.date.toString())
         addTextView(container, "  Country", it.country)
         addTextView(container, "  Cert. Issuer", it.certificateIssuer)
         addTextView(container, "  Cert. Id", it.certificateIdentifier)
+    }
+
+    private fun blankSafe(adapter: ValueSetEntryAdapter) = when {
+        adapter.valueSetEntry.display.isBlank() -> adapter.key
+        else -> adapter.valueSetEntry.display
     }
 
     private fun showLog(content: String) {
