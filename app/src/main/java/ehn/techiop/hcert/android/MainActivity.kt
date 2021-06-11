@@ -10,8 +10,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.integration.android.IntentIntegrator
 import ehn.techiop.hcert.kotlin.chain.Chain
-import ehn.techiop.hcert.kotlin.chain.DecisionService
-import ehn.techiop.hcert.kotlin.chain.VerificationDecision
+import ehn.techiop.hcert.kotlin.chain.DefaultChain
 import ehn.techiop.hcert.kotlin.chain.VerificationResult
 import ehn.techiop.hcert.kotlin.chain.impl.PrefilledCertificateRepository
 import ehn.techiop.hcert.kotlin.chain.impl.TrustListCertificateRepository
@@ -56,11 +55,13 @@ class MainActivity : AppCompatActivity() {
                 it.setOrientationLocked(false)
                 it.setDesiredBarcodeFormats(BarcodeFormat.QR_CODE.name)
             }.createScanIntent()
+            @Suppress("DEPRECATION")
             startActivityForResult(intent, IntentIntegrator.REQUEST_CODE)
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
         super.onActivityResult(requestCode, resultCode, data)
         IntentIntegrator.parseActivityResult(requestCode, resultCode, data)?.let { intentResult ->
             intentResult.contents?.let {
@@ -75,12 +76,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun verifyOnBackgroundThread(qrCodeContent: String) {
         try {
-            val result = VerificationResult()
-            val vaccinationData = getChain().decode(qrCodeContent, result)
-            val decision = DecisionService().decide(result)
-            val data = GreenCertificate.fromEuSchema(vaccinationData)
+            val result = getChain().decode(qrCodeContent)
+            val data = result.chainDecodeResult.eudgc
             runOnUiThread {
-                fillLayout(findViewById(R.id.container_data), data, result, decision)
+                fillLayout(findViewById(R.id.container_data), data, result.verificationResult)
             }
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -96,31 +95,22 @@ class MainActivity : AppCompatActivity() {
     private fun fillLayout(
         container: LinearLayout,
         data: GreenCertificate?,
-        it: VerificationResult,
-        verificationDecision: VerificationDecision
+        it: VerificationResult
     ) {
         container.removeAllViews()
 
-        when (verificationDecision) {
-            VerificationDecision.GOOD -> container.addView(TextView(this).also {
+        if (it.error == null) {
+            container.addView(TextView(this).also {
                 it.text = "Successfully decoded the contents of the scanned code."
                 it.setTextColor(resources.getColor(R.color.success, theme))
             })
-            VerificationDecision.WARNING -> container.addView(TextView(this).also {
-                it.text = "Decoded the contents of the scanned code with warnings."
-                it.setTextColor(resources.getColor(R.color.warning, theme))
-            })
-            else -> container.addView(TextView(this).also {
+        } else {
+            container.addView(TextView(this).also {
                 it.text = "Decoded the contents of the scanned code with errors."
                 it.setTextColor(resources.getColor(R.color.error, theme))
             })
         }
-        addTextView(container, "  Context", it.contextIdentifier ?: "NONE")
-        addTextView(container, "  Base45 decoded", it.base45Decoded.toString())
-        addTextView(container, "  ZLIB decoded", it.zlibDecoded.toString())
-        addTextView(container, "  COSE verified", it.coseVerified.toString())
-        addTextView(container, "  CWT decoded", it.cwtDecoded.toString())
-        addTextView(container, "  CBOR decoded", it.cborDecoded.toString())
+        addTextView(container, "  Error", it.error?.toString())
         addTextView(container, "  Issuer", it.issuer)
         addTextView(container, "  Issued At", it.issuedAt?.toString())
         addTextView(container, "  Expiration", it.expirationTime?.toString())
@@ -233,7 +223,7 @@ class MainActivity : AppCompatActivity() {
         }
         val repository =
             TrustListCertificateRepository(trustListSignature, trustListContent, trustAnchor)
-        return Chain.buildVerificationChain(repository)
+        return DefaultChain.buildVerificationChain(repository)
     }
 
     private fun downloadTrustListFiles() {

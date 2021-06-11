@@ -29,8 +29,8 @@ class FirstFragment : Fragment() {
         })
         view.findViewById<LinearLayout>(R.id.container_data).addView(TextView(context).also {
             it.text =
-                "Press the camera button in the right-hand lower corner to scan a QR Code from https://dgc.a-sit.at/ehn\n" +
-                        "Press the download button to load the trust list from https://dgc.a-sit.at/ehn/cert/list"
+                "Press the camera button in the right-hand lower corner to scan a QR Code from https://dgc.a-sit.at/ehn\n\n" +
+                        "Press the download button to load the trust list from https://dgc.a-sit.at/ehn/cert/listv2"
         })
 
 //        view.findViewById<Button>(R.id.button_first).setOnClickListener {
