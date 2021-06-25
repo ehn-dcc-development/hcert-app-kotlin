@@ -1,4 +1,10 @@
 <resources>
     <string name="app_name">Health Cert Verification</string>
     <string name="first_fragment_label">First Fragment</string>
+    <string name="menu_settings">Preferences</string>
+    <string name="trust_list_header">Trust List</string>
+    <string name="trust_list_content_title">Content URL</string>
+    <string name="trust_list_signature_title">Signature URL</string>
+    <string name="trust_list_root_title">Root of Trust</string>
+    <string name="title_activity_settings">Settings</string>
 </resources>

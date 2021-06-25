@@ -3,9 +3,13 @@ package ehn.techiop.hcert.android
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.PreferenceManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.integration.android.IntentIntegrator
@@ -58,6 +62,7 @@ class MainActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             startActivityForResult(intent, IntentIntegrator.REQUEST_CODE)
         }
+        PreferenceManager.setDefaultValues(this, R.xml.root_preferences, false);
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -211,36 +216,46 @@ class MainActivity : AppCompatActivity() {
 
     private fun getChain(): Chain {
         val trustAnchor = loadTrustListAnchor()
-        val trustListContent = try {
-            loadWebTrustList()
+        val content = try {
+            loadFromWeb(getPrefTrustListContent())
         } catch (e: Throwable) {
             trustListFile.readBytes()
         }
-        val trustListSignature = try {
-            loadWebTrustSig()
+        val signature = try {
+            loadFromWeb(getPrefTrustListSignature())
         } catch (e: Throwable) {
             trustSigFile.readBytes()
         }
-        val repository =
-            TrustListCertificateRepository(trustListSignature, trustListContent, trustAnchor)
+        val repository = TrustListCertificateRepository(signature, content, trustAnchor)
         return DefaultChain.buildVerificationChain(repository)
     }
 
     private fun downloadTrustListFiles() {
-        FileOutputStream(trustListFile, false).use { it.write(loadWebTrustList()) }
-        FileOutputStream(trustSigFile, false).use { it.write(loadWebTrustSig()) }
-        showLog("Downloaded trust list files")
+        val contentUrl = getPrefTrustListContent()
+        val signatureUrl = getPrefTrustListSignature()
+        FileOutputStream(trustListFile, false).use { it.write(loadFromWeb(contentUrl)) }
+        FileOutputStream(trustSigFile, false).use { it.write(loadFromWeb(signatureUrl)) }
+        showLog("Downloaded trust list files from $contentUrl and $signatureUrl")
     }
 
-    private fun loadTrustListAnchor(): PrefilledCertificateRepository {
-        val trustAnchorResource = resources.openRawResource(R.raw.trust_list_anchor)
-        val trustAnchorCertPem = trustAnchorResource.readBytes().decodeToString()
-        return PrefilledCertificateRepository(trustAnchorCertPem)
-    }
+    private fun loadTrustListAnchor() = PrefilledCertificateRepository(
+        PreferenceManager.getDefaultSharedPreferences(this).getString(
+            SettingsActivity.KEY_TRUST_LIST_ROOT,
+            resources.openRawResource(R.raw.trust_list_root_asit).readBytes().decodeToString()
+        )!!
+    )
 
-    private fun loadWebTrustSig() = loadFromWeb("https://dgc.a-sit.at/ehn/cert/sigv2")
+    private fun getPrefTrustListSignature() =
+        PreferenceManager.getDefaultSharedPreferences(this).getString(
+            SettingsActivity.KEY_TRUST_LIST_SIGNATURE,
+            "https://dgc.a-sit.at/ehn/cert/sigv2"
+        )!!
 
-    private fun loadWebTrustList() = loadFromWeb("https://dgc.a-sit.at/ehn/cert/listv2")
+    private fun getPrefTrustListContent() =
+        PreferenceManager.getDefaultSharedPreferences(this).getString(
+            SettingsActivity.KEY_TRUST_LIST_CONTENT,
+            "https://dgc.a-sit.at/ehn/cert/listv2"
+        )!!
 
     private fun loadFromWeb(url: String): ByteArray {
         client.newCall(Request.Builder().get().url(url).build()).execute().use {
@@ -250,4 +265,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        val inflater: MenuInflater = menuInflater
+        inflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.preferences -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
 }

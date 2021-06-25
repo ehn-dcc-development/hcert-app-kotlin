@@ -1,0 +1,33 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/trust_list_header">
+
+        <EditTextPreference
+            app:key="trust_list_content"
+            app:title="@string/trust_list_content_title"
+            app:defaultValue="https://dgc.a-sit.at/ehn/cert/listv2"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="trust_list_signature"
+            app:title="@string/trust_list_signature_title"
+            app:defaultValue="https://dgc.a-sit.at/ehn/cert/sigv2"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="trust_list_root"
+            app:title="@string/trust_list_root_title"
+            app:defaultValue="-----BEGIN CERTIFICATE-----
+MIIBJTCBy6ADAgECAgUAwvEVkzAKBggqhkjOPQQDAjAQMQ4wDAYDVQQDDAVFQy1N
+ZTAeFw0yMTA0MjMxMTI3NDhaFw0yMTA1MjMxMTI3NDhaMBAxDjAMBgNVBAMMBUVD
+LU1lMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/OV5UfYrtE140ztF9jOgnux1
+oyNO8Bss4377E/kDhp9EzFZdsgaztfT+wvA29b7rSb2EsHJrr8aQdn3/1ynte6MS
+MBAwDgYDVR0PAQH/BAQDAgWgMAoGCCqGSM49BAMCA0kAMEYCIQC51XwstjIBH10S
+N701EnxWGK3gIgPaUgBN+ljZAs76zQIhAODq4TJ2qAPpFc1FIUOvvlycGJ6QVxNX
+EkhRcgdlVfUb
+-----END CERTIFICATE-----"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
