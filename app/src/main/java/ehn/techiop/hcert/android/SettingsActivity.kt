@@ -110,12 +110,12 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     companion object {
-        val KEY_TRUST_LIST_CONTENT = "trust_list_content"
-        val KEY_TRUST_LIST_SIGNATURE = "trust_list_signature"
-        val KEY_TRUST_LIST_ROOT = "trust_list_root"
-        val KEY_DEFAULTS_ASIT = "defaults_asit"
-        val KEY_DEFAULTS_QS = "defaults_qs"
-        val KEY_DEFAULTS_PROD = "defaults_prod"
+        const val KEY_TRUST_LIST_CONTENT = "trust_list_content"
+        const val KEY_TRUST_LIST_SIGNATURE = "trust_list_signature"
+        const val KEY_TRUST_LIST_ROOT = "trust_list_root"
+        const val KEY_DEFAULTS_ASIT = "defaults_asit"
+        const val KEY_DEFAULTS_QS = "defaults_qs"
+        const val KEY_DEFAULTS_PROD = "defaults_prod"
     }
 
 }
