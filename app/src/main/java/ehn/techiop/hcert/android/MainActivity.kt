@@ -129,7 +129,8 @@ class MainActivity : AppCompatActivity() {
         }
         addTextView(container, "Data decoded:")
         addTextView(container, "  Version", data.schemaVersion)
-        addTextView(container, "  DateOfBirth", data.dateOfBirth.toString())
+        addTextView(container, "  DateOfBirth (parsed)", data.dateOfBirthString)
+        addTextView(container, "  DateOfBirth (converted)", data.dateOfBirth.toString())
         fillSubject(container, data.subject)
         data.recoveryStatements?.let {
             it.filterNotNull().forEach { rec -> fillRecovery(container, rec) }
