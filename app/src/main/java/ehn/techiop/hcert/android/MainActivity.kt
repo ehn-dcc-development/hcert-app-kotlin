@@ -241,7 +241,15 @@ class MainActivity : AppCompatActivity() {
     private fun loadTrustListAnchor() = PrefilledCertificateRepository(
         PreferenceManager.getDefaultSharedPreferences(this).getString(
             SettingsActivity.KEY_TRUST_LIST_ROOT,
-            resources.openRawResource(R.raw.trust_list_root_asit).readBytes().decodeToString()
+            "-----BEGIN CERTIFICATE-----\n" +
+                    "MIIBJTCBy6ADAgECAgUAwvEVkzAKBggqhkjOPQQDAjAQMQ4wDAYDVQQDDAVFQy1N\n" +
+                    "ZTAeFw0yMTA0MjMxMTI3NDhaFw0yMTA1MjMxMTI3NDhaMBAxDjAMBgNVBAMMBUVD\n" +
+                    "LU1lMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/OV5UfYrtE140ztF9jOgnux1\n" +
+                    "oyNO8Bss4377E/kDhp9EzFZdsgaztfT+wvA29b7rSb2EsHJrr8aQdn3/1ynte6MS\n" +
+                    "MBAwDgYDVR0PAQH/BAQDAgWgMAoGCCqGSM49BAMCA0kAMEYCIQC51XwstjIBH10S\n" +
+                    "N701EnxWGK3gIgPaUgBN+ljZAs76zQIhAODq4TJ2qAPpFc1FIUOvvlycGJ6QVxNX\n" +
+                    "EkhRcgdlVfUb\n" +
+                    "-----END CERTIFICATE-----"
         )!!
     )
 
