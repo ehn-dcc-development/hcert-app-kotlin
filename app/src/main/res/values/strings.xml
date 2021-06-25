@@ -6,5 +6,9 @@
     <string name="trust_list_content_title">Content URL</string>
     <string name="trust_list_signature_title">Signature URL</string>
     <string name="trust_list_root_title">Root of Trust</string>
+    <string name="defaults_header">Load defaults</string>
+    <string name="defaults_asit_title">dgc.a-sit.at</string>
+    <string name="defaults_qs_title">qr.gv.at QS</string>
+    <string name="defaults_prod_title">qr.gv.at PROD</string>
     <string name="title_activity_settings">Settings</string>
 </resources>

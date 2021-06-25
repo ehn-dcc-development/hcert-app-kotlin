@@ -30,4 +30,20 @@ EkhRcgdlVfUb
 
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/defaults_header">
+
+        <Preference
+            app:key="defaults_asit"
+            app:title="@string/defaults_asit_title" />
+
+        <Preference
+            app:key="defaults_qs"
+            app:title="@string/defaults_qs_title" />
+
+        <Preference
+            app:key="defaults_prod"
+            app:title="@string/defaults_prod_title" />
+
+    </PreferenceCategory>
+
 </PreferenceScreen>
