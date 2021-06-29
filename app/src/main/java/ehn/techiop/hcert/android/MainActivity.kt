@@ -122,6 +122,7 @@ class MainActivity : AppCompatActivity() {
         addTextView(container, "  Cert. valid from", it.certificateValidFrom?.toString())
         addTextView(container, "  Cert. valid until", it.certificateValidUntil?.toString())
         addTextView(container, "  Cert. valid content", it.certificateValidContent.toString())
+        addTextView(container, "  Cert. country", it.certificateSubjectCountry)
         addTextView(container, "  Content", it.content.toString())
         if (data == null) {
             addTextView(container, "No data decoded")

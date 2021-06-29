@@ -20,8 +20,8 @@ android {
         applicationId "ehn.techiop.hcert.android"
         minSdkVersion 24
         targetSdkVersion 30
-        versionCode 112
-        versionName "1.1.2"
+        versionCode 120
+        versionName "1.2.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.config
@@ -65,7 +65,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui-ktx:2.3.5'
     implementation 'com.squareup.okhttp3:okhttp:4.9.0'
     implementation 'com.journeyapps:zxing-android-embedded:4.1.0'
-    implementation 'ehn.techiop.hcert:hcert-kotlin-jvm:1.1.1'
+    implementation 'ehn.techiop.hcert:hcert-kotlin-jvm:1.2.0'
     implementation 'androidx.preference:preference-ktx:1.1.1'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
