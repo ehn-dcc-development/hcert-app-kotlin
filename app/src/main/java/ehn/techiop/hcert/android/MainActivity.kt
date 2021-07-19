@@ -19,6 +19,7 @@ import ehn.techiop.hcert.kotlin.chain.VerificationResult
 import ehn.techiop.hcert.kotlin.chain.impl.PrefilledCertificateRepository
 import ehn.techiop.hcert.kotlin.chain.impl.TrustListCertificateRepository
 import ehn.techiop.hcert.kotlin.data.*
+import ehn.techiop.hcert.kotlin.trust.SignedData
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -62,7 +63,7 @@ class MainActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             startActivityForResult(intent, IntentIntegrator.REQUEST_CODE)
         }
-        PreferenceManager.setDefaultValues(this, R.xml.root_preferences, false);
+        PreferenceManager.setDefaultValues(this, R.xml.root_preferences, false)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -117,12 +118,12 @@ class MainActivity : AppCompatActivity() {
         }
         addTextView(container, "  Error", it.error?.toString())
         addTextView(container, "  Issuer", it.issuer)
-        addTextView(container, "  Issued At", it.issuedAt?.toString())
+        addTextView(container, "  Issued at", it.issuedAt?.toString())
         addTextView(container, "  Expiration", it.expirationTime?.toString())
         addTextView(container, "  Cert. valid from", it.certificateValidFrom?.toString())
         addTextView(container, "  Cert. valid until", it.certificateValidUntil?.toString())
-        addTextView(container, "  Cert. valid content", it.certificateValidContent.toString())
         addTextView(container, "  Cert. country", it.certificateSubjectCountry)
+        addTextView(container, "  Cert. valid content", it.certificateValidContent.toString())
         addTextView(container, "  Content", it.content.toString())
         if (data == null) {
             addTextView(container, "No data decoded")
@@ -228,7 +229,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Throwable) {
             trustSigFile.readBytes()
         }
-        val repository = TrustListCertificateRepository(signature, content, trustAnchor)
+        val repository = TrustListCertificateRepository(SignedData(content, signature), trustAnchor)
         return DefaultChain.buildVerificationChain(repository)
     }
 
@@ -240,6 +241,7 @@ class MainActivity : AppCompatActivity() {
         showLog("Downloaded trust list files from $contentUrl and $signatureUrl")
     }
 
+    @Suppress("SpellCheckingInspection")
     private fun loadTrustListAnchor() = PrefilledCertificateRepository(
         PreferenceManager.getDefaultSharedPreferences(this).getString(
             SettingsActivity.KEY_TRUST_LIST_ROOT,
