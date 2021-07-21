@@ -19,14 +19,7 @@ allprojects {
         mavenLocal()
         google()
         mavenCentral()
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/ehn-dcc-development/hcert-kotlin")
-            credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
-            }
-        }
+        maven { url "https://jitpack.io" }
     }
 }
 
